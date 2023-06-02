@@ -22,8 +22,8 @@ The technologies used to make this build include:
 
 ### Images
 
-- [Photo by Karolina Grabowska](https://www.pexels.com/photo/tomatoes-basil-leaves-and-sliced-lime-on-bowls-5386721/)
-- [Photo by PNW Production](https://www.pexels.com/photo/tableware-on-the-table-8251780/)
+- [Photo by Victoria Shes](https://unsplash.com/photos/l-l0WmRVzYk)
+- [Photo by Sebastian Coman](https://unsplash.com/photos/rwBJaJdesGg)
 
 # Color Palette
 
