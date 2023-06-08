@@ -29,7 +29,20 @@ export default {
       name: 'date',
       type: 'date',
       title: 'Date',
-      validation: (Rule) => Rule.required(),
+      validation: (Rule) =>
+        Rule.required().custom((value) => {
+          const today = new Date()
+          const yesterday = new Date(today)
+          yesterday.setDate(today.getDate() - 1)
+
+          const dateValue = new Date(value)
+
+          if (dateValue >= new Date(yesterday)) {
+            return true
+          }
+
+          return `The date must cannot be before ${today}`
+        }),
     },
     {
       name: 'image',

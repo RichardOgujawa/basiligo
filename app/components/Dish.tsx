@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+	Alert,
 	Image,
 	ImageBackground,
 	Modal,
@@ -11,18 +12,70 @@ import {
 } from 'react-native';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import FeatherIcon from 'react-native-vector-icons/Feather';
-import { useSelector } from 'react-redux';
+
+import { useDispatch, useSelector } from 'react-redux';
 import {
-	decrement,
-	increment,
-	selectCount,
-} from '../redux/features/counter/counterSlice';
+	addToBasket,
+	removeFromBasket,
+	selectBasketItems,
+} from '../redux/features/basket/basketSlice';
 import styles from '../styles/variables';
 import PurchaseTypeBtn from './PurchaseTypeBtn';
 
 const Dish = ({ item }: any) => {
-	const count = useSelector(selectCount);
+	const { _id, name, price, ingredients, date, image } = item;
 
+	//Redux
+	const dispatch = useDispatch();
+	const handleRemoveItemFromBasket = () => {
+		dispatch(removeFromBasket(_id));
+	};
+
+	const basketItems = useSelector(selectBasketItems);
+	const totalItemsWithId = basketItems.filter(
+		(item: any) => item._id === _id
+	).length;
+
+	//Figuring out whether or not the yellow label should be visible
+	const [yellowLabelVisible, setYellowLabelVisible] = useState(false);
+
+	function setYellowLabelDisplay() {
+		if (totalItemsWithId > 0) {
+			setYellowLabelVisible(true);
+		} else {
+			setYellowLabelVisible(false);
+		}
+	}
+	useEffect(() => {
+		setTimeout(() => setYellowLabelDisplay(), 500);
+	}, []);
+
+	useEffect(() => {
+		setTimeout(() => setYellowLabelDisplay(), 500);
+	}, [totalItemsWithId]);
+
+	const handleAddItemToBasket = () => {
+		dispatch(addToBasket({ _id, name, price, ingredients, date, image }));
+	};
+
+	//Alert
+	const showAlert = () => {
+		Alert.alert(
+			name,
+			'Added to basket.',
+			[
+				{
+					text: 'Cancel',
+					style: 'cancel',
+				},
+			],
+			{
+				cancelable: true,
+			}
+		);
+	};
+
+	//Modal
 	const [modalVisible, setModalVisible] = useState(false);
 	const [meBtn, setMeBtn] = useState(false);
 
@@ -48,18 +101,6 @@ const Dish = ({ item }: any) => {
 		setFriendBtn(false);
 	};
 
-	const [shoppingItem, setShoppingItem] = useState(0);
-
-	const shoppingItemIncrement = () => {
-		setShoppingItem(shoppingItem + 1);
-		console.log(shoppingItem);
-	};
-	const shoppingItemDecrement = () => {
-		if (shoppingItem > 0) {
-			setShoppingItem(shoppingItem - 1);
-			console.log(shoppingItem);
-		}
-	};
 	return (
 		<>
 			<Modal
@@ -81,60 +122,29 @@ const Dish = ({ item }: any) => {
 						style={styles.container}
 					>
 						<Pressable>
-							<View className="bg-white px-3 w-full space-y-3 py-5">
+							<View className="bg-white px-3 w-full space-y-3 pt-5 pb-1">
 								<View className="flex-row space-x-3">
 									<View className="bg-green-500 flex-1">
-										<Image source={{ uri: item.image }} className="flex-1" />
+										<Image source={{ uri: image }} className="flex-1" />
 									</View>
 									<View className="flex-[2] space-y-2">
-										<Text className="font-bold">
-											{item.name}
-											{count}
-										</Text>
+										<Text className="font-bold">{name}</Text>
 										<Text className="text-[11px] text-gray-400">
-											{item.ingredients}
+											{ingredients}
 										</Text>
-										<Text>€{item.price.toFixed(2)}</Text>
+										<Text>€{price?.toFixed(2)}</Text>
 									</View>
 								</View>
-								<View className="flex-row justify-between">
-									<PurchaseTypeBtn
-										btnTypeProp={meBtn}
-										btnHandlerProp={meBtnHandler}
-										sizeProp={19}
-										btnTextProp="Me"
-										ioniconsProps="ios-person-outline"
-									/>
-									<PurchaseTypeBtn
-										btnTypeProp={friendBtn}
-										btnHandlerProp={friendHandler}
-										sizeProp={19}
-										btnTextProp="Friend"
-										ioniconsProps="ios-person-outline"
-									/>
-									<PurchaseTypeBtn
-										btnTypeProp={groupBtn}
-										btnHandlerProp={groupHandler}
-										sizeProp={27}
-										btnTextProp="Party"
-										ioniconsProps="ios-people-outline"
-									/>
-								</View>
-								<View className="flex-row space-x-3"></View>
+
 								<View className=" w-full border-t border-gray-400 py-4 flex-row">
-									<View className="flex-row flex-1 items-center justify-start space-x-3">
-										<Pressable onPress={shoppingItemDecrement}>
+									<View className="flex-row flex-1 items-center justify-center space-x-3">
+										<Pressable onPress={handleRemoveItemFromBasket}>
 											<EvilIcons name="minus" size={40} color="#9ca3af" />
 										</Pressable>
-										<Text>{shoppingItem}</Text>
-										<Pressable onPress={shoppingItemIncrement}>
+										<Text>{totalItemsWithId}</Text>
+										<Pressable onPress={handleAddItemToBasket}>
 											<EvilIcons name="plus" size={40} color="#9ca3af" />
 										</Pressable>
-									</View>
-									<View className=" flex-1">
-										<TouchableOpacity className="items-center justify-center py-3 bg-yellow-700 rounded">
-											<Text className="text-white"> &#43; Add</Text>
-										</TouchableOpacity>
 									</View>
 								</View>
 							</View>
@@ -143,31 +153,39 @@ const Dish = ({ item }: any) => {
 				</TouchableWithoutFeedback>
 			</Modal>
 
-			<TouchableOpacity activeOpacity={0.4} className="w-full">
+			<TouchableOpacity
+				activeOpacity={0.4}
+				className="w-full"
+				onPress={() => setModalVisible(true)}
+			>
 				<View>
 					<View>
-						<ImageBackground
-							source={{ uri: item.image }}
-							className="w-full h-40"
-						/>
-						<Text className="font-bold absolute bottom-0 p-4 bg-yellow-700/60 w-full text-white text-center">
-							2 items in Cart
-						</Text>
+						<ImageBackground source={{ uri: image }} className="w-full h-40" />
+						{yellowLabelVisible && (
+							<Text className="font-bold absolute bottom-0 p-4 bg-yellow-700/60 w-full text-white text-center">
+								{totalItemsWithId} {totalItemsWithId > 1 ? 'items' : 'item'} in
+								Cart
+							</Text>
+						)}
 					</View>
 				</View>
-				<View className="flex-row justify-between items-center px-3 border-b border-b-gray-400">
-					<View className="space-y-2 py-3">
-						<Text className="font-bold uppercase">{item.name}</Text>
-						<Text>€{item.price.toFixed(2)}</Text>
+				<View className="flex-row justify-between items-center border-b border-b-gray-400">
+					<View className="space-y-2 py-3 flex-[3]">
+						<Text className="font-bold uppercase">{name}</Text>
+						<Text>€{price?.toFixed(2)}</Text>
 					</View>
-					<View>
-						<TouchableOpacity
-							className="bg-emerald-500 flex-row p-2 items-center space-x-2"
-							onPress={() => setModalVisible(true)}
-						>
-							<FeatherIcon name="plus" size={22} color="white" />
-							<Text className="text-white">Add</Text>
-						</TouchableOpacity>
+					<View className="flex-1">
+						{totalItemsWithId > 0 ? (
+							<View className="bg-emerald-700 flex-row p-2 items-center space-x-1">
+								<FeatherIcon name="check" size={22} color="white" />
+								<Text className="text-white font-bold">Added</Text>
+							</View>
+						) : (
+							<View className="bg-emerald-400 flex-row p-2 items-center space-x-2">
+								<FeatherIcon name="plus" size={22} color="white" />
+								<Text className="text-white font-bold">Add</Text>
+							</View>
+						)}
 					</View>
 				</View>
 			</TouchableOpacity>

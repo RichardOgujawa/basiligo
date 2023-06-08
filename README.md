@@ -7,6 +7,9 @@ The technologies used to make this build include:
 - [Expo Router](https://expo.github.io/router/docs/)
 - [Nativewind (TailwindCSS)](https://www.nativewind.dev)
 - [TypeScript](https://www.typescriptlang.org)
+- [Sanity](https://www.sanity.io)
+- [Firebase Authenication](https://firebase.google.com)
+- [Redux](https://redux.js.org)
 
 ## Credit
 

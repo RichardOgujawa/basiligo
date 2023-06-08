@@ -11,6 +11,10 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 	},
+
+	inputStyle: {
+		backgroundColor: 'red',
+	},
 	//Desaturated Orange = bg-yellow-700
 	'desaturated-orange': { color: '#B7995E' },
 	'bg-desaturated-orange': { color: '#B7995E' },

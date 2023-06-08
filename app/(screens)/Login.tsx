@@ -14,12 +14,16 @@ import {
 } from 'react-native';
 // import LoginForm from './components/login-form';
 import {
+	FacebookAuthProvider,
 	GoogleAuthProvider,
 	UserCredential,
 	createUserWithEmailAndPassword,
+	sendPasswordResetEmail,
 	signInWithEmailAndPassword,
 	signInWithPopup,
+	signInWithRedirect,
 } from 'firebase/auth';
+
 import { auth } from '../../firebaseConfig';
 
 import GoogleIcon from 'react-native-vector-icons/AntDesign';
@@ -29,15 +33,6 @@ import styles from '../styles/variables';
 const Login = () => {
 	const router = useRouter();
 
-	useEffect(() => {
-		auth.onAuthStateChanged((user) => {
-			//authenticate the user variable
-			if (user) {
-				//if we have a user
-				router.push('/Menu'); //navigate to the about page
-			}
-		});
-	}, []);
 	//SplashScreen
 	const [isReady, setReady] = React.useState(false);
 
@@ -91,47 +86,108 @@ const Login = () => {
 				//this will return a promise object
 				const user = userCredentials.user; //we will set a constant to the specific part of the user object we want which is the actual user credentials.
 				console.log('Registered with', user.email);
+				router.push('./RegisterName');
 			})
-			.catch((error) => alert(error.message));
+			.catch((error) => {
+				switch (error.code) {
+					case 'auth/invalid-email':
+						alert('Please enter a valid Email.');
+						break;
+					case 'auth/weak-password':
+						alert('Password must be at least 6 characters long.');
+						break;
+
+					default:
+						alert(error.message);
+						break;
+				}
+			});
 	};
 
 	const handleSignIn = () => {
+		//check if the user has a displayName then run code
 		signInWithEmailAndPassword(auth, email, password) //create user with email and password provided in the form
 			.then((userCredentials: UserCredential) => {
 				//this will return a promise object
 				const user = userCredentials.user; //we will set a constant to the specific part of the user object we want which is the actual user credentials.
 				console.log('Logged in with', user.email);
+
+				auth.onAuthStateChanged(() => {
+					//authenticate the user variable
+					if (auth.currentUser?.displayName) {
+						//before going to the Menu, check if the user has a displayName, if not then this is a new user.
+						//if we have a user
+						router.push('./menu'); //navigate to the about page
+					} else {
+						return;
+					}
+				});
 			})
-			.catch((error) => alert(error.message));
+			.catch((error) => {
+				switch (error.code) {
+					case 'auth/user-not-found':
+						alert('User not found.');
+						break;
+					case 'auth/wrong-password':
+						alert('Wrong password.');
+						break;
+					case 'auth/invalid-email':
+						alert('Please enter a valid Email.');
+						break;
+
+					default:
+						alert(error.message);
+						break;
+				}
+			});
+	};
+
+	const handlerPasswordReset = () => {
+		if (typeof email === 'string') {
+			sendPasswordResetEmail(auth, email)
+				.then(() => {
+					alert('Password reset email sent!');
+				})
+				.catch((error) => {
+					const errorMessage = error.message;
+
+					alert(errorMessage);
+					// ...
+				});
+		} else {
+			console.log('No email provided');
+		}
 	};
 
 	//Google Sign In
-	const googleProvider = new GoogleAuthProvider();
+	// const facebookProvider = new FacebookAuthProvider();
 
-	const handleGoogleSignIn = () => {
-		signInWithPopup(auth, googleProvider)
-			.then((result) => {
-				// This gives you a Google Access Token. You can use it to access the Google API.
-				const credential = GoogleAuthProvider.credentialFromResult(result);
-				const token = credential?.accessToken;
-				// The signed-in user info.
-				const user = result.user;
-				// IdP data available using getAdditionalUserInfo(result)
-				console.log(token, user);
-				// ...
-			})
-			.catch((error) => {
-				// Handle Errors here.
-				const errorCode = error.code;
-				const errorMessage = error.message;
-				// The email of the user's account used.
-				const email = error.customData.email;
-				// The AuthCredential type that was used.
-				const credential = GoogleAuthProvider.credentialFromError(error);
-				// ...
-				console.log(errorCode, errorMessage, email, credential);
-			});
-	};
+	// const handleFacebookSignIn = () => {
+	// 	console.log(auth);
+	// 	signInWithPopup(auth, facebookProvider)
+	// 		.then((result) => {
+	// 			// The signed-in user info.
+	// 			const user = result.user;
+
+	// 			// This gives you a Facebook Access Token. You can use it to access the Facebook API.
+	// 			const credential = FacebookAuthProvider.credentialFromResult(result);
+	// 			const accessToken = credential?.accessToken;
+
+	// 			// IdP data available using getAdditionalUserInfo(result)
+	// 			// ...
+	// 		})
+	// 		.catch((error) => {
+	// 			// Handle Errors here.
+	// 			const errorCode = error.code;
+	// 			const errorMessage = error.message;
+	// 			// The email of the user's account used.
+	// 			const email = error.customData.email;
+	// 			// The AuthCredential type that was used.
+	// 			const credential = FacebookAuthProvider.credentialFromError(error);
+
+	// 			// ...
+	// 		});
+	// };
 
 	return (
 		<View className="flex-1 items-center">
@@ -162,8 +218,11 @@ const Login = () => {
 								placeholder="Email Address"
 								placeholderTextColor={'#9ca3af'}
 								className="border border-gray-400 py-4 w-64 text-center"
-								onChangeText={(email: string) => setEmail(email)}
-								value={email}
+								onChangeText={(email: string) => {
+									let changingText = email.toLowerCase();
+									setEmail(changingText);
+								}}
+								value={email.toLowerCase()}
 								textContentType="emailAddress"
 								onSubmitEditing={() => focusNextInput(passwordRef)}
 							/>
@@ -199,16 +258,20 @@ const Login = () => {
 										isPressed ? 'bg-emerald-900' : 'bg-emerald-800'
 									}`}
 								>
-									<Text className="text-white uppercase">Register</Text>
+									<Text className="text-white uppercase font-semibold">
+										Register
+									</Text>
 								</Pressable>
 							)}
 
-							<Link
-								href="./forgot-password"
+							<Pressable
+								onPress={handlerPasswordReset}
 								className="capitalize text-center text-gray-400"
 							>
-								Forgot password?
-							</Link>
+								<Text className="capitalize text-center text-gray-400 underline">
+									Forgot password?
+								</Text>
+							</Pressable>
 						</View>
 					</View>
 					<View
@@ -220,7 +283,7 @@ const Login = () => {
 								<TwitterIcon name="sc-twitter" size={32} color="white" />
 							</Pressable>
 							<Pressable
-								onPress={handleGoogleSignIn}
+								// onPress={handleFacebookSignIn}
 								className="bg-red-500 flex-1 items-center py-3 rounded-full"
 							>
 								<GoogleIcon name="google" size={22} color="white" />

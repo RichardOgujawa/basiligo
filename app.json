@@ -11,5 +11,7 @@
 			"resizeMode": "cover"
 		},
 		"icon": "./app/assets/images/branding/logo-dark.png"
+
+		// "plugins": ["@stripe/stripe-react-native"]
 	}
 }
